@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy ASP.Net Core app to Azure Web App - az204pmassist
+name: Build and deploy Node.js app to Azure Web App - AZ204pmassist
 
 on:
   push:
@@ -11,30 +11,33 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up .NET Core
-        uses: actions/setup-dotnet@v4
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
         with:
-          dotnet-version: '8.x'
+          node-version: '20.x'
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+      - name: npm install, build, and test
+        run: |
+          npm install
+          npm run build --if-present
+          npm run test --if-present
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+      - name: Zip artifact for deployment
+        run: zip release.zip ./* -r
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          name: node-app
+          path: release.zip
 
   deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     needs: build
     environment:
       name: 'Production'
@@ -46,20 +49,23 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
+          name: node-app
+
+      - name: Unzip artifact for deployment
+        run: unzip release.zip
       
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A5F83C55C0EF4A828A6E82A300F587A1 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_1459A028DE6241C4A0DEEC3DBAAE2F11 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_1BB4BAAE027B46C5AE8CCDBBA74DD1EB }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_418B2C87C2B24C5AA84B36EF037342B4 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_35E2A45EA95C4609A5A834055FA545CF }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4626A765A0044CA6A8FB08257433858C }}
 
-      - name: Deploy to Azure Web App
+      - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'az204pmassist'
+          app-name: 'AZ204pmassist'
           slot-name: 'Production'
           package: .
           
